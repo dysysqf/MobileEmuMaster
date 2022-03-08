@@ -259,6 +259,11 @@ namespace Server.MirObjects
         public bool UserMatch;
         public string MatchName;
         public ItemType MatchType;
+
+        public MarketPanelType MarketPanelType;
+        public short MinShapes, MaxShapes;
+
+
         public int PageSent;
         public List<AuctionInfo> Search = new List<AuctionInfo>();
         public List<ItemSets> ItemSets = new List<ItemSets>();
@@ -12658,32 +12663,7 @@ namespace Server.MirObjects
         }
         public void GainItemMail(UserItem item, int reason)
         {
-            string sender = "Bichon Administrator";
-            string message = "You have been automatically sent an item \r\ndue to the following reason.\r\n";
-
-            switch (reason)
-            {
-                case 1:
-                    message = "Could not return item to bag after trade.";
-                    break;
-                case 2:
-                    message = "Your loaned item has been returned.";
-                    break;
-                default:
-                    message = "No reason provided.";
-                    break;
-            }
-
-            //sent from player
-            MailInfo mail = new MailInfo(Info.Index)
-            {
-                Sender = sender,
-                Message = message
-            };
-
-            mail.Items.Add(item);
-
-            mail.Send();
+            Envir.MailCharacter(Info, item, reason);
         }
 
         private bool DropItem(UserItem item, int range = 1, bool DeathDrop = false)
@@ -13382,12 +13362,6 @@ namespace Server.MirObjects
             return true;
         }
 
-        public void RequestUserName(uint id)
-        {
-            CharacterInfo Character = Envir.GetCharacterInfo((int)id);
-            if (Character != null)
-                Enqueue(new S.UserName { Id = (uint)Character.Index, Name = Character.Name });
-        }
         public void RequestChatItem(ulong id)
         {
             //Enqueue(new S.ChatItemStats { ChatItemId = id, Stats = whatever });
@@ -14238,6 +14212,10 @@ namespace Server.MirObjects
                     if (value.Length < 1) return;
                     key = string.Format("TalkMonster({0})", value[0]);
                     break;
+                case DefaultNPCType.Client:
+                    key = "Client";
+                    break;
+
             }
 
             key = string.Format("[@_{0}]", key);
@@ -14499,26 +14477,51 @@ namespace Server.MirObjects
         #endregion
 
         #region Consignment
-
         public void ConsignItem(ulong uniqueID, uint price)
         {
             S.ConsignItem p = new S.ConsignItem { UniqueID = uniqueID };
-            if (price < Globals.MinConsignment || price > Globals.MaxConsignment || Dead)
+
+            if (Dead || NPCPage == null)
             {
                 Enqueue(p);
                 return;
             }
 
-            if (NPCPage == null || !String.Equals(NPCPage.Key, NPCObject.ConsignKey, StringComparison.CurrentCultureIgnoreCase))
+            switch (MarketPanelType)
             {
-                Enqueue(p);
-                return;
-            }
+                case MarketPanelType.Consign:
+                    {
+                        if (price < Globals.MinConsignment || price > Globals.MaxConsignment)
+                        {
+                            Enqueue(p);
+                            return;
+                        }
 
-            if (Account.Gold < Globals.ConsignmentCost)
-            {
-                Enqueue(p);
-                return;
+                        if (Account.Gold < Globals.ConsignmentCost)
+                        {
+                            Enqueue(p);
+                            return;
+                        }
+                    }
+                    break;
+                case MarketPanelType.Auction:
+                    {
+                        if (price < Globals.MinStartingBid || price > Globals.MaxStartingBid)
+                        {
+                            Enqueue(p);
+                            return;
+                        }
+
+                        if (Account.Gold < Globals.AuctionCost)
+                        {
+                            Enqueue(p);
+                            return;
+                        }
+                    }
+                    break;
+                default:
+                    Enqueue(p);
+                    return;
             }
 
             for (int n = 0; n < CurrentMap.NPCs.Count; n++)
@@ -14549,23 +14552,12 @@ namespace Server.MirObjects
                     return;
                 }
 
-                if (temp.RentalInformation != null && temp.RentalInformation.BindingFlags.HasFlag(BindMode.DontSell))
-                {
-                    Enqueue(p);
-                    return;
-                }
+                MarketItemType type = MarketPanelType == MarketPanelType.Consign ? MarketItemType.Consign : MarketItemType.Auction;
+                uint cost = MarketPanelType == MarketPanelType.Consign ? Globals.ConsignmentCost : Globals.AuctionCost;
 
-                //Check Max Consignment.
+                //TODO Check Max Consignment.
 
-                AuctionInfo auction = new AuctionInfo
-                {
-                    AuctionID = ++Envir.NextAuctionID,
-                    CharacterIndex = Info.Index,
-                    CharacterInfo = Info,
-                    ConsignmentDate = Envir.Now,
-                    Item = temp,
-                    Price = price
-                };
+                AuctionInfo auction = new AuctionInfo(Info, temp, price, type);
 
                 Account.Auctions.AddLast(auction);
                 Envir.Auctions.AddFirst(auction);
@@ -14573,156 +14565,162 @@ namespace Server.MirObjects
                 p.Success = true;
                 Enqueue(p);
 
-                Report.ItemChanged("ConsignItem", temp, temp.Count, 1);
-
                 Info.Inventory[index] = null;
-                Account.Gold -= Globals.ConsignmentCost;
-                Enqueue(new S.LoseGold { Gold = Globals.ConsignmentCost });
-                RefreshBagWeight();
 
+                Account.Gold -= cost;
+
+                Enqueue(new S.LoseGold { Gold = cost });
+                RefreshBagWeight();
             }
 
             Enqueue(p);
         }
-        public bool Match(AuctionInfo info)
-        {
-            if (Envir.Now >= info.ConsignmentDate.AddDays(Globals.ConsignmentLength) && !info.Sold)
-                info.Expired = true;
 
-            return (UserMatch || !info.Expired && !info.Sold) && ((MatchType == ItemType.Nothing || info.Item.Info.Type == MatchType) &&
-                (string.IsNullOrWhiteSpace(MatchName) || info.Item.Info.Name.Replace(" ", "").IndexOf(MatchName, StringComparison.OrdinalIgnoreCase) >= 0));
+        private bool Match(AuctionInfo info)
+        {
+            return (UserMatch || !info.Expired && !info.Sold)
+                && (!UserMatch || ((MarketPanelType == MarketPanelType.Auction && info.ItemType == MarketItemType.Auction) || (MarketPanelType != MarketPanelType.Auction && info.ItemType == MarketItemType.Consign)))
+                && ((MatchType == ItemType.Nothing || info.Item.Info.Type == MatchType)
+                && (info.Item.Info.Shape >= MinShapes && info.Item.Info.Shape <= MaxShapes)
+                && (string.IsNullOrWhiteSpace(MatchName) || info.Item.Info.Name.Replace(" ", "").IndexOf(MatchName, StringComparison.OrdinalIgnoreCase) >= 0));
         }
+
         public void MarketPage(int page)
         {
             if (Dead || Envir.Time < SearchTime) return;
 
-            if (NPCPage == null || (!String.Equals(NPCPage.Key, NPCObject.MarketKey, StringComparison.CurrentCultureIgnoreCase) && !String.Equals(NPCPage.Key, NPCObject.ConsignmentsKey, StringComparison.CurrentCultureIgnoreCase)) || page <= PageSent) return;
-
-            SearchTime = Envir.Time + Globals.SearchDelay;
-
-            for (int n = 0; n < CurrentMap.NPCs.Count; n++)
+            if (MarketPanelType != MarketPanelType.GameShop)
             {
-                NPCObject ob = CurrentMap.NPCs[n];
-                if (ob.ObjectID != NPCID) continue;
+                bool failed = true;
 
-                List<ClientAuction> listings = new List<ClientAuction>();
+                if (NPCPage == null || (!String.Equals(NPCPage.Key, NPCObject.MarketKey, StringComparison.CurrentCultureIgnoreCase) && !String.Equals(NPCPage.Key, NPCObject.ConsignmentsKey, StringComparison.CurrentCultureIgnoreCase)) || page <= PageSent) return;
 
-                for (int i = 0; i < 10; i++)
+                SearchTime = Envir.Time + Globals.SearchDelay;
+
+                for (int n = 0; n < CurrentMap.NPCs.Count; n++)
                 {
-                    if (i + page * 10 >= Search.Count) break;
-                    listings.Add(Search[i + page * 10].CreateClientAuction(UserMatch));
+                    NPCObject ob = CurrentMap.NPCs[n];
+                    if (ob.ObjectID != NPCID) continue;
+                    failed = false;
                 }
 
-                for (int i = 0; i < listings.Count; i++)
+                if (failed)
                 {
-                    //CheckItemInfo(listings[i].Item.Info);
-                    CheckItem(listings[i].Item);
+                    return;
                 }
-
-                PageSent = page;
-                Enqueue(new S.NPCMarketPage { Listings = listings });
             }
+
+            List<AuctionInfo> listings = new List<AuctionInfo>();
+            List<ClientAuction> clientListings = new List<ClientAuction>();
+
+            for (int i = 0; i < 10; i++)
+            {
+                if (i + page * 10 >= Search.Count) break;
+                listings.Add(Search[i + page * 10]);
+            }
+
+            foreach (var listing in listings)
+            {
+                clientListings.Add(listing.CreateClientAuction(UserMatch));
+            }
+
+            for (int i = 0; i < listings.Count; i++)
+            {
+                CheckItem(listings[i].Item);
+            }
+
+            PageSent = page;
+            Enqueue(new S.NPCMarketPage { Listings = clientListings });
         }
+
         public void GetMarket(string name, ItemType type)
         {
             Search.Clear();
             MatchName = name.Replace(" ", "");
             MatchType = type;
             PageSent = 0;
-            LinkedListNode<AuctionInfo> current = UserMatch ? Account.Auctions.First : Envir.Auctions.First;
 
-            while (current != null)
+            long start = Envir.Stopwatch.ElapsedMilliseconds;
+
+            if (MarketPanelType == MarketPanelType.GameShop)
             {
-                if (Match(current.Value)) Search.Add(current.Value);
-                current = current.Next;
+                //Search = Envir.GameShopList.Where(x => (MatchType == ItemType.Nothing || x.Info.Type == MatchType)
+                //&& (x.Info.Shape >= MinShapes && x.Info.Shape <= MaxShapes)
+                //&& (string.IsNullOrWhiteSpace(MatchName) || x.Info.Name.Replace(" ", "").IndexOf(MatchName, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
+            }
+            else
+            {
+                LinkedListNode<AuctionInfo> current = UserMatch ? Account.Auctions.First : Envir.Auctions.First;
+
+                while (current != null)
+                {
+                    if (Match(current.Value)) Search.Add(current.Value);
+                    current = current.Next;
+                }
             }
 
-            List<ClientAuction> listings = new List<ClientAuction>();
+            List<AuctionInfo> listings = new List<AuctionInfo>();
+            List<ClientAuction> clientListings = new List<ClientAuction>();
 
             for (int i = 0; i < 10; i++)
             {
                 if (i >= Search.Count) break;
-                listings.Add(Search[i].CreateClientAuction(UserMatch));
+                listings.Add(Search[i]);
+            }
+
+            foreach (var listing in listings)
+            {
+                clientListings.Add(listing.CreateClientAuction(UserMatch));
             }
 
             for (int i = 0; i < listings.Count; i++)
-            {
-                //CheckItemInfo(listings[i].Item.Info);
                 CheckItem(listings[i].Item);
-            }
 
-            Enqueue(new S.NPCMarket { Listings = listings, Pages = (Search.Count - 1) / 10 + 1, UserMode = UserMatch });      
+            Enqueue(new S.NPCMarket { Listings = clientListings, Pages = (Search.Count - 1) / 10 + 1, UserMode = UserMatch });
+
+            SMain.EnqueueDebugging(string.Format("{0}ms to match {1} items", Envir.Stopwatch.ElapsedMilliseconds - start, MarketPanelType == MarketPanelType.GameShop ? Envir.GameShopList.Count : (UserMatch ? Account.Auctions.Count : Envir.Auctions.Count)));
         }
 
-        public void MarketSearch(string match)
+        public void MarketSearch(string match, ItemType type)
         {
             if (Dead || Envir.Time < SearchTime) return;
 
-            if (NPCPage == null || (!String.Equals(NPCPage.Key, NPCObject.MarketKey, StringComparison.CurrentCultureIgnoreCase) && !String.Equals(NPCPage.Key, NPCObject.ConsignmentsKey, StringComparison.CurrentCultureIgnoreCase))) return;
-
             SearchTime = Envir.Time + Globals.SearchDelay;
 
-            for (int n = 0; n < CurrentMap.NPCs.Count; n++)
+            if (MarketPanelType == MarketPanelType.GameShop)
             {
-                NPCObject ob = CurrentMap.NPCs[n];
-                if (ob.ObjectID != NPCID) continue;
+                GetMarket(match, type);
+            }
+            else
+            {
+                if (NPCPage == null || (!String.Equals(NPCPage.Key, NPCObject.MarketKey, StringComparison.CurrentCultureIgnoreCase) && !String.Equals(NPCPage.Key, NPCObject.ConsignmentsKey, StringComparison.CurrentCultureIgnoreCase))) return;
 
-                GetMarket(match, ItemType.Nothing);
+                for (int n = 0; n < CurrentMap.NPCs.Count; n++)
+                {
+                    NPCObject ob = CurrentMap.NPCs[n];
+                    if (ob.ObjectID != NPCID) continue;
+
+                    GetMarket(match, type);
+                }
             }
         }
-        public void MarketRefresh()
-        {
-            if (Dead || Envir.Time < SearchTime) return;
 
-            if (NPCPage == null || (!String.Equals(NPCPage.Key, NPCObject.MarketKey, StringComparison.CurrentCultureIgnoreCase) && !String.Equals(NPCPage.Key, NPCObject.ConsignmentsKey, StringComparison.CurrentCultureIgnoreCase))) return;
-
-            SearchTime = Envir.Time + Globals.SearchDelay;
-
-            for (int n = 0; n < CurrentMap.NPCs.Count; n++)
-            {
-                NPCObject ob = CurrentMap.NPCs[n];
-                if (ob.ObjectID != NPCID) continue;
-
-                GetMarket(string.Empty, MatchType);
-            }
-        }
-        public void MarketBuy(ulong auctionID)
+        public void MarketBuy(ulong auctionID, uint bidPrice = 0)
         {
             if (Dead)
             {
                 Enqueue(new S.MarketFail { Reason = 0 });
                 return;
-
             }
 
-            if (NPCPage == null || !String.Equals(NPCPage.Key, NPCObject.MarketKey, StringComparison.CurrentCultureIgnoreCase))
+            if (MarketPanelType == MarketPanelType.GameShop)
             {
-                Enqueue(new S.MarketFail { Reason = 1 });
-                return;
-            }
-
-            for (int n = 0; n < CurrentMap.NPCs.Count; n++)
-            {
-                NPCObject ob = CurrentMap.NPCs[n];
-                if (ob.ObjectID != NPCID) continue;
-
-                foreach (AuctionInfo auction in Envir.Auctions)
+                foreach (AuctionInfo auction in Search)
                 {
                     if (auction.AuctionID != auctionID) continue;
+                    if (auction.ItemType != MarketItemType.GameShop) continue;
 
-                    if (auction.Sold)
-                    {
-                        Enqueue(new S.MarketFail { Reason = 2 });
-                        return;
-                    }
-
-                    if (auction.Expired)
-                    {
-                        Enqueue(new S.MarketFail { Reason = 3 });
-                        return;
-                    }
-
-                    if (auction.Price > Account.Gold)
+                    if (auction.Price > Account.Credit)
                     {
                         Enqueue(new S.MarketFail { Reason = 4 });
                         return;
@@ -14734,38 +14732,111 @@ namespace Server.MirObjects
                         return;
                     }
 
-                    if (Account.Auctions.Contains(auction))
+                    UserItem item = Envir.CreateFreshItem(auction.Item.Info);
+
+                    Account.Credit -= auction.Price;
+                    GainItem(item);
+                    Enqueue(new S.MarketSuccess { Message = string.Format("You bought {0} for {1:#,##0} Credit", auction.Item.Name, auction.Price) });
+                    MarketSearch(MatchName, MatchType);
+
+                    return;
+                }
+            }
+            else
+            {
+                if (NPCPage == null || !String.Equals(NPCPage.Key, NPCObject.MarketKey, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    Enqueue(new S.MarketFail { Reason = 1 });
+                    return;
+                }
+
+                for (int n = 0; n < CurrentMap.NPCs.Count; n++)
+                {
+                    NPCObject ob = CurrentMap.NPCs[n];
+                    if (ob.ObjectID != NPCID) continue;
+
+                    foreach (AuctionInfo auction in Search)
                     {
-                        Enqueue(new S.MarketFail { Reason = 6 });
+                        if (auction.AuctionID != auctionID) continue;
+                        if (auction.ItemType != MarketItemType.Consign && auction.ItemType != MarketItemType.Auction) continue;
+
+                        if (auction.Sold)
+                        {
+                            Enqueue(new S.MarketFail { Reason = 2 });
+                            return;
+                        }
+
+                        if (auction.Expired)
+                        {
+                            Enqueue(new S.MarketFail { Reason = 3 });
+                            return;
+                        }
+
+                        if (!CanGainItem(auction.Item))
+                        {
+                            Enqueue(new S.MarketFail { Reason = 5 });
+                            return;
+                        }
+
+                        if (Account.Auctions.Contains(auction))
+                        {
+                            Enqueue(new S.MarketFail { Reason = 6 });
+                            return;
+                        }
+
+                        if (auction.Price > Account.Gold)
+                        {
+                            Enqueue(new S.MarketFail { Reason = 4 });
+                            return;
+                        }
+
+                        if (auction.ItemType == MarketItemType.Consign)
+                        {
+                            auction.Sold = true;
+
+                            Account.Gold -= auction.Price;
+
+                            Enqueue(new S.LoseGold { Gold = auction.Price });
+                            GainItem(auction.Item);
+
+                            Envir.MessageAccount(auction.SellerInfo.AccountInfo, string.Format("You sold {0} for {1:#,##0} Gold", auction.Item.Name, auction.Price), ChatType.Hint);
+                            Enqueue(new S.MarketSuccess { Message = string.Format("You bought {0} for {1:#,##0} Gold", auction.Item.Name, auction.Price) });
+                            MarketSearch(MatchName, MatchType);
+                        }
+                        else
+                        {
+                            if (auction.CurrentBid > bidPrice)
+                            {
+                                Enqueue(new S.MarketFail { Reason = 9 });
+                                return;
+                            }
+
+                            auction.CurrentBid = bidPrice;
+                            auction.CurrentBuyerIndex = Info.Index;
+                            auction.CurrentBuyerInfo = Info;
+
+                            Envir.MessageAccount(auction.SellerInfo.AccountInfo, string.Format("Someone has bid {1:#,##0} Gold for {0}", auction.Item.Name, auction.CurrentBid), ChatType.Hint);
+                            Enqueue(new S.MarketSuccess { Message = string.Format("You bid {1:#,##0} Gold for {0}", auction.Item.Name, auction.CurrentBid) });
+                            MarketSearch(MatchName, MatchType);
+                        }
+
                         return;
                     }
-
-                    auction.Sold = true;
-                    Account.Gold -= auction.Price;
-                    Enqueue(new S.LoseGold { Gold = auction.Price });
-                    GainItem(auction.Item);
-
-                    Report.ItemChanged("BuyMarketItem", auction.Item, auction.Item.Count, 2);
-
-                    Envir.MessageAccount(auction.CharacterInfo.AccountInfo, string.Format("You Sold {0} for {1:#,##0} Gold", auction.Item.FriendlyName, auction.Price), ChatType.Hint);
-                    Enqueue(new S.MarketSuccess { Message = string.Format("You brought {0} for {1:#,##0} Gold", auction.Item.FriendlyName, auction.Price) });
-                    MarketSearch(MatchName);
-                    return;
                 }
             }
 
             Enqueue(new S.MarketFail { Reason = 7 });
         }
+
         public void MarketGetBack(ulong auctionID)
         {
             if (Dead)
             {
                 Enqueue(new S.MarketFail { Reason = 0 });
                 return;
-
             }
 
-            if (NPCPage == null || !String.Equals(NPCPage.Key, NPCObject.ConsignmentsKey, StringComparison.CurrentCultureIgnoreCase))
+            if (NPCPage == null || !String.Equals(NPCPage.Key, NPCObject.MarketKey, StringComparison.CurrentCultureIgnoreCase))
             {
                 Enqueue(new S.MarketFail { Reason = 1 });
                 return;
@@ -14786,7 +14857,6 @@ namespace Server.MirObjects
                         return;
                     }
 
-
                     if (!auction.Sold || auction.Expired)
                     {
                         if (!CanGainItem(auction.Item))
@@ -14798,25 +14868,25 @@ namespace Server.MirObjects
                         Account.Auctions.Remove(auction);
                         Envir.Auctions.Remove(auction);
                         GainItem(auction.Item);
-                        MarketSearch(MatchName);
-
-                        Report.ItemChanged("GetBackMarketItem", auction.Item, auction.Item.Count, 2);
-
+                        MarketSearch(MatchName, MatchType);
                         return;
                     }
 
-                    uint gold = (uint)Math.Max(0, auction.Price - auction.Price * Globals.Commission);
-                    if (!CanGainGold(gold))
+                    uint cost = auction.ItemType == MarketItemType.Consign ? auction.Price : auction.CurrentBid;
+
+                    if (!CanGainGold(cost))
                     {
                         Enqueue(new S.MarketFail { Reason = 8 });
                         return;
                     }
 
+                    uint gold = (uint)Math.Max(0, cost - cost * Globals.Commission);
+
                     Account.Auctions.Remove(auction);
                     Envir.Auctions.Remove(auction);
                     GainGold(gold);
-                    Enqueue(new S.MarketSuccess { Message = string.Format("You Sold {0} for {1:#,##0} Gold. \nEarnings: {2:#,##0} Gold.\nCommision: {3:#,##0} Gold.‎", auction.Item.FriendlyName, auction.Price, gold, auction.Price - gold) });
-                    MarketSearch(MatchName);
+                    Enqueue(new S.MarketSuccess { Message = string.Format("You sold {0} for {1:#,##0} Gold. \nEarnings: {2:#,##0} Gold.\nCommision: {3:#,##0} Gold.‎", auction.Item.Name, cost, gold, cost - gold) });
+                    MarketSearch(MatchName, MatchType);
                     return;
                 }
 
@@ -14825,7 +14895,15 @@ namespace Server.MirObjects
             Enqueue(new S.MarketFail { Reason = 7 });
         }
 
+        public void RequestUserName(uint id)
+        {
+            CharacterInfo Character = Envir.GetCharacterInfo((int)id);
+            if (Character != null)
+                Enqueue(new S.UserName { Id = (uint)Character.Index, Name = Character.Name });
+        }
+
         #endregion
+
 
         #region Awakening
 

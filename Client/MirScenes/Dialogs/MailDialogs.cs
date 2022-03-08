@@ -640,12 +640,12 @@ namespace Client.MirScenes.Dialogs
             Visible = false;
         }
 
-        public void ComposeMail(string recipientName)
+        public void ComposeMail(string recipientName, string message = "")
         {
             if (string.IsNullOrEmpty(recipientName)) return;
 
             RecipientNameLabel.Text = recipientName;
-            MessageTextBox.Text = string.Empty;
+            MessageTextBox.Text = message;
 
             MessageTextBox.SetFocus();
 

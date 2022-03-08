@@ -1044,8 +1044,7 @@ namespace Server.MirNetwork
         private void ChangePMode(C.ChangePMode p)
         {
             if (Stage != GameStage.Game) return;
-            if (Player.Class != MirClass.Wizard && Player.Class != MirClass.Taoist && Player.Pets.Count == 0)
-                return;
+  
 
             Player.PMode = p.Mode;
 
@@ -1098,6 +1097,12 @@ namespace Server.MirNetwork
             if (p.ObjectID == Player.DefaultNPC.ObjectID && Player.NPCID == Player.DefaultNPC.ObjectID)
             {
                 Player.CallDefaultNPC(p.ObjectID, p.Key);
+                return;
+            }
+
+            if (p.ObjectID == uint.MaxValue)
+            {
+                Player.CallDefaultNPC(DefaultNPCType.Client, null);
                 return;
             }
 
@@ -1222,13 +1227,18 @@ namespace Server.MirNetwork
         {
             if (Stage != GameStage.Game) return;
 
-            Player.MarketSearch(p.Match);
+            Player.UserMatch = p.Usermode;
+            Player.MinShapes = p.MinShape;
+            Player.MaxShapes = p.MaxShape;
+            Player.MarketPanelType = p.MarketType;
+
+            Player.MarketSearch(p.Match, p.Type);
         }
         private void MarketRefresh()
         {
             if (Stage != GameStage.Game) return;
 
-            Player.MarketRefresh();
+            Player.MarketSearch(string.Empty, Player.MatchType);
         }
 
         private void MarketPage(C.MarketPage p)
@@ -1241,7 +1251,7 @@ namespace Server.MirNetwork
         {
             if (Stage != GameStage.Game) return;
 
-            Player.MarketBuy(p.AuctionID);
+            Player.MarketBuy(p.AuctionID, p.BidPrice);
         }
         private void MarketGetBack(C.MarketGetBack p)
         {
