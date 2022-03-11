@@ -72,15 +72,15 @@ namespace Client.MirScenes
             };
 
             Version = new MirLabel
-                {
-                    AutoSize = true,
-                    BackColour = Color.FromArgb(200, 50, 50, 50),
-                    Border = true,
-                    BorderColour = Color.Black,
-                    Location = new Point(5, 580),
-                    Parent = _background,
-                    Text = string.Format("Version: {0}", Application.ProductVersion),
-                };
+            {
+                AutoSize = true,
+                BackColour = Color.FromArgb(200, 50, 50, 50),
+                Border = true,
+                BorderColour = Color.Black,
+                Location = new Point(5, Settings.ScreenHeight - 20),
+                Parent = _background,
+                Text = string.Format("Version: {0}", Application.ProductVersion),
+            };
 
             TestLabel = new MirImageControl
             {

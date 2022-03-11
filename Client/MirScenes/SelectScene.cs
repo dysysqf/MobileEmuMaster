@@ -38,7 +38,7 @@ namespace Client.MirScenes
 
             Background = new MirImageControl
             {
-                Index = 64,
+                Index = 65,
                 Library = Libraries.Prguse,
                 Parent = this,
             };
@@ -48,25 +48,28 @@ namespace Client.MirScenes
                 Index = 40,
                 Library = Libraries.Title,
                 Parent = this,
-                Location = new Point(364, 12)
+                Location = new Point(468, 20)
             };
 
             ServerLabel = new MirLabel
-                {
-                    Location = new Point(322, 44),
-                    Parent = Background,
-                    Size = new Size(155, 17),
-                    Text = GameLanguage.GameName,
-                    DrawFormat = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
-                };
-            
+            {
+                Location = new Point(432, 60),
+                // Location = new Point(322, 44),
+                Parent = Background,
+                Size = new Size(155, 17),
+                Text = "Legend of Mir 2",
+                DrawFormat = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
+            };
+
+            var xPoint = ((Settings.ScreenWidth - 200) / 5);
+
             StartGameButton = new MirButton
             {
                 Enabled = false,
                 HoverIndex = 341,
                 Index = 340,
                 Library = Libraries.Title,
-                Location = new Point(110, 568),
+                Location = new Point(100 + (xPoint * 1) - (xPoint / 2) - 50, Settings.ScreenHeight - 32),
                 Parent = Background,
                 PressedIndex = 342,
                 GrayScale = true
@@ -78,7 +81,7 @@ namespace Client.MirScenes
                     HoverIndex = 344,
                     Index = 343,
                     Library = Libraries.Title,
-                    Location = new Point(230, 568),
+                    Location = new Point(100 + (xPoint * 2) - (xPoint / 2) - 50, Settings.ScreenHeight - 32),
                     Parent = Background,
                     PressedIndex = 345,
                 };
@@ -89,7 +92,7 @@ namespace Client.MirScenes
                 HoverIndex = 347,
                 Index = 346,
                 Library = Libraries.Title,
-                Location = new Point(350, 568),
+                Location = new Point(100 + (xPoint * 3) - (xPoint / 2) - 50, Settings.ScreenHeight - 32),
                 Parent = Background,
                 PressedIndex = 348
             };
@@ -101,7 +104,7 @@ namespace Client.MirScenes
                 HoverIndex = 350,
                 Index = 349,
                 Library = Libraries.Title,
-                Location = new Point(470, 568),
+                Location = new Point(100 + (xPoint * 4) - (xPoint / 2) - 50, Settings.ScreenHeight - 32),
                 Parent = Background,
                 PressedIndex = 351
             };
@@ -111,7 +114,7 @@ namespace Client.MirScenes
                 HoverIndex = 353,
                 Index = 352,
                 Library = Libraries.Title,
-                Location = new Point(590, 568),
+                Location = new Point(100 + (xPoint * 5) - (xPoint / 2) - 50, Settings.ScreenHeight - 32),
                 Parent = Background,
                 PressedIndex = 354
             };
@@ -143,7 +146,7 @@ namespace Client.MirScenes
 
             CharacterButtons[0] = new CharacterButton
             {
-                Location = new Point(447, 122),
+                Location = new Point(637, 194),
                 Parent = Background,
                 Sound = SoundList.ButtonA,
             };
@@ -157,7 +160,7 @@ namespace Client.MirScenes
 
             CharacterButtons[1] = new CharacterButton
             {
-                Location = new Point(447, 226),
+                Location = new Point(637, 298),
                 Parent = Background,
                 Sound = SoundList.ButtonA,
             };
@@ -170,7 +173,7 @@ namespace Client.MirScenes
 
             CharacterButtons[2] = new CharacterButton
             {
-                Location = new Point(447, 330),
+                Location = new Point(637, 402),
                 Parent = Background,
                 Sound = SoundList.ButtonA,
             };
@@ -184,7 +187,7 @@ namespace Client.MirScenes
 
             CharacterButtons[3] = new CharacterButton
             {
-                Location = new Point(447, 434),
+                Location = new Point(637, 506),
                 Parent = Background,
                 Sound = SoundList.ButtonA,
             };
@@ -198,7 +201,7 @@ namespace Client.MirScenes
 
             LastAccessLabel = new MirLabel
             {
-                Location = new Point(140, 509),
+                Location = new Point(265, 609),
                 Parent = Background,
                 Size = new Size(180, 21),
                 DrawFormat = TextFormatFlags.Left | TextFormatFlags.VerticalCenter,
@@ -206,7 +209,7 @@ namespace Client.MirScenes
             };
             LastAccessLabelLabel = new MirLabel
             {
-                Location = new Point(-80, -1),
+                Location = new Point(-65, 0),
                 Parent = LastAccessLabel,
                 Text = GameLanguage.LastOnline,
                     Size = new Size(100, 21),
@@ -413,12 +416,6 @@ namespace Client.MirScenes
         {
             StartGameButton.Enabled = true;
 
-            if (p.Resolution < Settings.Resolution || Settings.Resolution == 0) Settings.Resolution = p.Resolution;
-
-            if (p.Resolution < 1024 || Settings.Resolution < 1024) Settings.Resolution = 800;
-            else if (p.Resolution < 1366 || Settings.Resolution < 1280) Settings.Resolution = 1024;
-            else if (p.Resolution < 1366 || Settings.Resolution < 1366) Settings.Resolution = 1280;//not adding an extra setting for 1280 on server cause well it just depends on the aspect ratio of your screen
-            else if (p.Resolution >= 1366 && Settings.Resolution >= 1366) Settings.Resolution = 1366;
 
             switch (p.Result)
             {
@@ -435,12 +432,25 @@ namespace Client.MirScenes
                     MirMessageBox.Show("No active map and/or start point found.");
                     break;
                 case 4:
-                    if (Settings.Resolution == 1024)
-                        CMain.SetResolution(1024, 768);
-                    else if (Settings.Resolution == 1280)
-                        CMain.SetResolution(1280, 800);
-                    else if (Settings.Resolution == 1366)
-                        CMain.SetResolution(1366, 768);
+                    if (p.Resolution < Settings.Resolution || Settings.Resolution == 0) Settings.Resolution = p.Resolution;
+
+                    switch (Settings.Resolution)
+                    {
+                        default:
+                        case 1024:
+                            Settings.Resolution = 1024;
+                            CMain.SetResolution(1024, 768);
+                            break;
+                        case 1280:
+                            CMain.SetResolution(1280, 800);
+                            break;
+                        case 1366:
+                            CMain.SetResolution(1366, 768);
+                            break;
+                        case 1920:
+                            CMain.SetResolution(1920, 1080);
+                            break;
+                    }
                     ActiveScene = new GameScene();
                     Dispose();
                     break;

@@ -30,12 +30,10 @@
         {
             this.AccountLogin_txt = new System.Windows.Forms.TextBox();
             this.AccountPass_txt = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.Res3_pb = new System.Windows.Forms.PictureBox();
             this.Res2_pb = new System.Windows.Forms.PictureBox();
-            this.Res1_pb = new System.Windows.Forms.PictureBox();
             this.ID_l = new System.Windows.Forms.Label();
             this.Password_l = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
@@ -55,9 +53,10 @@
             this.label12 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.Res4_pb = new System.Windows.Forms.PictureBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.Res5_pb = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.Res3_pb)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Res2_pb)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.Res1_pb)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.AutoStart_pb)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Fullscreen_pb)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.OnTop_pb)).BeginInit();
@@ -98,26 +97,13 @@
             this.AccountPass_txt.TextChanged += new System.EventHandler(this.AccountPass_txt_TextChanged);
             this.AccountPass_txt.Leave += new System.EventHandler(this.AccountPass_txt_TextChanged);
             // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.BackColor = System.Drawing.Color.Transparent;
-            this.label1.Font = new System.Drawing.Font("Calibri", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.ForeColor = System.Drawing.Color.Gray;
-            this.label1.Location = new System.Drawing.Point(160, 51);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(48, 13);
-            this.label1.TabIndex = 3;
-            this.label1.Text = "800x600";
-            this.label1.Click += new System.EventHandler(this.Res1_pb_Click);
-            // 
             // label2
             // 
             this.label2.AutoSize = true;
             this.label2.BackColor = System.Drawing.Color.Transparent;
             this.label2.Font = new System.Drawing.Font("Calibri", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label2.ForeColor = System.Drawing.Color.Gray;
-            this.label2.Location = new System.Drawing.Point(160, 72);
+            this.label2.Location = new System.Drawing.Point(160, 51);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(54, 13);
             this.label2.TabIndex = 5;
@@ -130,7 +116,7 @@
             this.label3.BackColor = System.Drawing.Color.Transparent;
             this.label3.Font = new System.Drawing.Font("Calibri", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label3.ForeColor = System.Drawing.Color.Gray;
-            this.label3.Location = new System.Drawing.Point(160, 113);
+            this.label3.Location = new System.Drawing.Point(160, 87);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(54, 13);
             this.label3.TabIndex = 7;
@@ -140,7 +126,7 @@
             // Res3_pb
             // 
             this.Res3_pb.Image = global::Client.Properties.Resources.Radio_Unactive;
-            this.Res3_pb.Location = new System.Drawing.Point(142, 113);
+            this.Res3_pb.Location = new System.Drawing.Point(142, 87);
             this.Res3_pb.Name = "Res3_pb";
             this.Res3_pb.Size = new System.Drawing.Size(12, 12);
             this.Res3_pb.TabIndex = 6;
@@ -150,22 +136,12 @@
             // Res2_pb
             // 
             this.Res2_pb.Image = global::Client.Properties.Resources.Radio_Unactive;
-            this.Res2_pb.Location = new System.Drawing.Point(142, 72);
+            this.Res2_pb.Location = new System.Drawing.Point(142, 51);
             this.Res2_pb.Name = "Res2_pb";
             this.Res2_pb.Size = new System.Drawing.Size(12, 12);
             this.Res2_pb.TabIndex = 4;
             this.Res2_pb.TabStop = false;
             this.Res2_pb.Click += new System.EventHandler(this.Res2_pb_Click);
-            // 
-            // Res1_pb
-            // 
-            this.Res1_pb.Image = global::Client.Properties.Resources.Radio_Unactive;
-            this.Res1_pb.Location = new System.Drawing.Point(142, 51);
-            this.Res1_pb.Name = "Res1_pb";
-            this.Res1_pb.Size = new System.Drawing.Size(12, 12);
-            this.Res1_pb.TabIndex = 2;
-            this.Res1_pb.TabStop = false;
-            this.Res1_pb.Click += new System.EventHandler(this.Res1_pb_Click);
             // 
             // ID_l
             // 
@@ -379,7 +355,7 @@
             this.label5.BackColor = System.Drawing.Color.Transparent;
             this.label5.Font = new System.Drawing.Font("Calibri", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label5.ForeColor = System.Drawing.Color.Gray;
-            this.label5.Location = new System.Drawing.Point(160, 92);
+            this.label5.Location = new System.Drawing.Point(160, 69);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(54, 13);
             this.label5.TabIndex = 26;
@@ -388,12 +364,34 @@
             // Res4_pb
             // 
             this.Res4_pb.Image = global::Client.Properties.Resources.Radio_Unactive;
-            this.Res4_pb.Location = new System.Drawing.Point(142, 92);
+            this.Res4_pb.Location = new System.Drawing.Point(142, 74);
             this.Res4_pb.Name = "Res4_pb";
             this.Res4_pb.Size = new System.Drawing.Size(12, 12);
             this.Res4_pb.TabIndex = 25;
             this.Res4_pb.TabStop = false;
             this.Res4_pb.Click += new System.EventHandler(this.Res4_pb_Click);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.BackColor = System.Drawing.Color.Transparent;
+            this.label1.Font = new System.Drawing.Font("Calibri", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.ForeColor = System.Drawing.Color.Gray;
+            this.label1.Location = new System.Drawing.Point(160, 105);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(60, 13);
+            this.label1.TabIndex = 27;
+            this.label1.Text = "1920x1080";
+            // 
+            // Res5_pb
+            // 
+            this.Res5_pb.Image = global::Client.Properties.Resources.Radio_Unactive;
+            this.Res5_pb.Location = new System.Drawing.Point(142, 105);
+            this.Res5_pb.Name = "Res5_pb";
+            this.Res5_pb.Size = new System.Drawing.Size(12, 12);
+            this.Res5_pb.TabIndex = 28;
+            this.Res5_pb.TabStop = false;
+            this.Res5_pb.Click += new System.EventHandler(this.Res5_pb_Click);
             // 
             // Config
             // 
@@ -403,6 +401,8 @@
             this.BackgroundImage = global::Client.Properties.Resources.Config_Base1;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
             this.ClientSize = new System.Drawing.Size(230, 311);
+            this.Controls.Add(this.Res5_pb);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.Res4_pb);
             this.Controls.Add(this.label12);
@@ -425,8 +425,6 @@
             this.Controls.Add(this.Res3_pb);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.Res2_pb);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.Res1_pb);
             this.Controls.Add(this.AccountPass_txt);
             this.Controls.Add(this.AccountLogin_txt);
             this.Controls.Add(this.pictureBox6);
@@ -445,7 +443,6 @@
             this.Click += new System.EventHandler(this.Config_Click);
             ((System.ComponentModel.ISupportInitialize)(this.Res3_pb)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Res2_pb)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.Res1_pb)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.AutoStart_pb)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Fullscreen_pb)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.OnTop_pb)).EndInit();
@@ -453,6 +450,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.CleanFiles_pb)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox6)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Res4_pb)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.Res5_pb)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -462,8 +460,6 @@
 
         private System.Windows.Forms.TextBox AccountLogin_txt;
         private System.Windows.Forms.TextBox AccountPass_txt;
-        private System.Windows.Forms.PictureBox Res1_pb;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.PictureBox Res2_pb;
         private System.Windows.Forms.Label label3;
@@ -487,5 +483,7 @@
         private System.Windows.Forms.Label label12;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.PictureBox Res4_pb;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.PictureBox Res5_pb;
     }
 }

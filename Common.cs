@@ -2109,6 +2109,9 @@ public class InIReader
 
 public static class Globals
 {
+    public const string ProductCodename = "Crystal";
+    public const string ProductVersion = "Release";
+
     public const int
         MinAccountIDLength = 3,
         MaxAccountIDLength = 15,
