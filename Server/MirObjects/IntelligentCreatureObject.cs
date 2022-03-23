@@ -72,7 +72,7 @@ namespace Server.MirObjects
 
         public override string Name
         {
-            get { return Master == null ? CustomName : (Dead ? CustomName : string.Format("{0}_{1}'s Pet", CustomName, Master.Name)); }
+            get { return Master == null ? CustomName : (Dead ? CustomName : string.Format("{0}_{1}'的 宠物", CustomName, Master.Name)); }
             set { throw new NotSupportedException(); }
         }
         protected override bool CanAttack
@@ -613,11 +613,11 @@ namespace Server.MirObjects
 
                     if (item.Item.Info.ShowGroupPickup && IsMasterGroupMember(Master))
                         for (int j = 0; j < Master.GroupMembers.Count; j++)
-                            Master.GroupMembers[j].ReceiveChat(Name + " Picked up: {" + item.Item.FriendlyName + "}", ChatType.Hint);
+                            Master.GroupMembers[j].ReceiveChat(Name + " 捡起: {" + item.Item.FriendlyName + "}", ChatType.Hint);
 
                     if (item.Item.Info.Grade == ItemGrade.Mythical || item.Item.Info.Grade == ItemGrade.Legendary || item.Item.Info.Grade == ItemGrade.Heroic)
                     {
-                        Master.ReceiveChat("Pet Picked up: {" + item.Item.FriendlyName + "}", ChatType.Hint);
+                        Master.ReceiveChat("宠物捡起: {" + item.Item.FriendlyName + "}", ChatType.Hint);
                         ((PlayerObject)Master).Enqueue(new S.IntelligentCreaturePickup { ObjectID = ObjectID });
                     }
 

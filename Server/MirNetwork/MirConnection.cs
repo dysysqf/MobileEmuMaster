@@ -1451,17 +1451,17 @@ namespace Server.MirNetwork
             {
                 Player.AllowMarriage = !Player.AllowMarriage;
                 if (Player.AllowMarriage)
-                    Player.ReceiveChat("You're now allowing marriage requests.", ChatType.Hint);
+                    Player.ReceiveChat("你现在允许求婚请求.", ChatType.Hint);
                 else
-                    Player.ReceiveChat("You're now blocking marriage requests.", ChatType.Hint);
+                    Player.ReceiveChat("你现在拒绝求婚请求.", ChatType.Hint);
             }
             else
             {
                 Player.AllowLoverRecall = !Player.AllowLoverRecall;
                 if (Player.AllowLoverRecall)
-                    Player.ReceiveChat("You're now allowing recall from lover.", ChatType.Hint);
+                    Player.ReceiveChat("你现在允许爱人召唤.", ChatType.Hint);
                 else
-                    Player.ReceiveChat("You're now blocking recall from lover.", ChatType.Hint);
+                    Player.ReceiveChat("你现在拒绝爱人召唤.", ChatType.Hint);
             }
         }
 
@@ -1601,7 +1601,7 @@ namespace Server.MirNetwork
                 return;
             }
 
-            Player.ReceiveChat("Reincarnation failed", ChatType.System);
+            Player.ReceiveChat("复活失败", ChatType.System);
         }
 
         private void CancelReincarnation()

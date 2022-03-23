@@ -787,7 +787,7 @@ namespace Server.MirObjects
 
                                     for (int j = 0; j < ConquestMap.Players.Count; j++)
                                     {
-                                        ConquestMap.Players[j].ReceiveChat(string.Format("{0} has captured {1} at {2}", tempWinning.Name, controlFlag.Info.Name, Info.Name), ChatType.System);
+                                        ConquestMap.Players[j].ReceiveChat(string.Format("{0} 已在{2}处捕获{1}}", tempWinning.Name, controlFlag.Info.Name, Info.Name), ChatType.System);
                                     }
                                 }
                             }

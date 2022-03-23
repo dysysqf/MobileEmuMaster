@@ -111,7 +111,7 @@ namespace Client.MirScenes
             //    Location = new Point(684, 10)
             //};
 
-            _connectBox = new MirMessageBox("Attempting to connect to the server.", MirMessageBoxButtons.Cancel);
+            _connectBox = new MirMessageBox("正在连接到服务器.", MirMessageBoxButtons.Cancel);
             _connectBox.CancelButton.Click += (o, e) => Program.Form.Close();
             Shown += (sender, args) =>
                 {
@@ -162,7 +162,7 @@ namespace Client.MirScenes
 
         private  void SendVersion()
         {
-            _connectBox.Label.Text = "Sending Client Version.";
+            _connectBox.Label.Text = "检测客户端版本.";
 
             C.ClientVersion p = new C.ClientVersion();
             try
@@ -185,7 +185,7 @@ namespace Client.MirScenes
             switch (p.Result)
             {
                 case 0:
-                    MirMessageBox.Show("Wrong version, please update your game.\nGame will now Close", true);
+                    MirMessageBox.Show("版本错误, 请升级游戏客户端.\n游戏即将关闭", true);
 
                     Network.Disconnect();
                     break;
@@ -211,40 +211,40 @@ namespace Client.MirScenes
             switch (p.Result)
             {
                 case 0:
-                    MirMessageBox.Show("Account creation is currently disabled.");
+                    MirMessageBox.Show("服务器暂时不允许创建新账号.");
                     _account.Dispose();
                     break;
                 case 1:
-                    MirMessageBox.Show("Your AccountID is not acceptable.");
+                    MirMessageBox.Show("账号错误.");
                     _account.AccountIDTextBox.SetFocus();
                     break;
                 case 2:
-                    MirMessageBox.Show("Your Password is not acceptable.");
+                    MirMessageBox.Show("密码错误.");
                     _account.Password1TextBox.SetFocus();
                     break;
                 case 3:
-                    MirMessageBox.Show("Your E-Mail Address is not acceptable.");
+                    MirMessageBox.Show("邮件错误.");
                     _account.EMailTextBox.SetFocus();
                     break;
                 case 4:
-                    MirMessageBox.Show("Your User Name is not acceptable.");
+                    MirMessageBox.Show("用户名错误.");
                     _account.UserNameTextBox.SetFocus();
                     break;
                 case 5:
-                    MirMessageBox.Show("Your Secret Question is not acceptable.");
+                    MirMessageBox.Show("密码提示问题错误.");
                     _account.QuestionTextBox.SetFocus();
                     break;
                 case 6:
-                    MirMessageBox.Show("Your Secret Answer is not acceptable.");
+                    MirMessageBox.Show("密码提示答案错误.");
                     _account.AnswerTextBox.SetFocus();
                     break;
                 case 7:
-                    MirMessageBox.Show("An Account with this ID already exists.");
+                    MirMessageBox.Show("这个账号已经存在.");
                     _account.AccountIDTextBox.Text = string.Empty;
                     _account.AccountIDTextBox.SetFocus();
                     break;
                 case 8:
-                    MirMessageBox.Show("Your account was created successfully.");
+                    MirMessageBox.Show("你的账号创建成功.");
                     _account.Dispose();
                     break;
             }
@@ -256,19 +256,19 @@ namespace Client.MirScenes
             switch (p.Result)
             {
                 case 0:
-                    MirMessageBox.Show("Password Changing is currently disabled.");
+                    MirMessageBox.Show("服务器暂时不允许修改密码.");
                     _password.Dispose();
                     break;
                 case 1:
-                    MirMessageBox.Show("Your AccountID is not acceptable.");
+                    MirMessageBox.Show("账号错误.");
                     _password.AccountIDTextBox.SetFocus();
                     break;
                 case 2:
-                    MirMessageBox.Show("The current Password is not acceptable.");
+                    MirMessageBox.Show("当前密码错误.");
                     _password.CurrentPasswordTextBox.SetFocus();
                     break;
                 case 3:
-                    MirMessageBox.Show("Your new Password is not acceptable.");
+                    MirMessageBox.Show("新密码错误.");
                     _password.NewPassword1TextBox.SetFocus();
                     break;
                 case 4:
@@ -281,7 +281,7 @@ namespace Client.MirScenes
                     _password.CurrentPasswordTextBox.Text = string.Empty;
                     break;
                 case 6:
-                    MirMessageBox.Show("Your password was changed successfully.");
+                    MirMessageBox.Show("你的密码修改成功.");
                     _password.Dispose();
                     break;
             }
@@ -300,7 +300,7 @@ namespace Client.MirScenes
             switch (p.Result)
             {
                 case 0:
-                    MirMessageBox.Show("Logging in is currently disabled.");
+                    MirMessageBox.Show("服务器暂时不允许登录.");
                     _login.Clear();
                     break;
                 case 1:
@@ -308,7 +308,7 @@ namespace Client.MirScenes
                     _login.AccountIDTextBox.SetFocus();
                     break;
                 case 2:
-                    MirMessageBox.Show("Your Password is not acceptable.");
+                    MirMessageBox.Show("账号错误.");
                     _login.PasswordTextBox.SetFocus();
                     break;
                 case 3:
@@ -321,7 +321,7 @@ namespace Client.MirScenes
                     _login.PasswordTextBox.SetFocus();
                     break;
                 case 5:
-                    MirMessageBox.Show("The account's password must be changed before logging in.");                    
+                    MirMessageBox.Show("不正确的账号密码组合");                    
                     OpenPasswordChangeDialog(_login.AccountIDTextBox.Text, _login.PasswordTextBox.Text);
                     _login.PasswordTextBox.Text = string.Empty;
                     break;
