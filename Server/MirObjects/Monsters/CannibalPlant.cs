@@ -56,7 +56,7 @@ namespace Server.MirObjects.Monsters
 
                     Broadcast(new S.ObjectHide { ObjectID = ObjectID });
 
-                    SetHP(MaxHP);
+                    SetHP(Stats[Stat.HP]);
                 }
             }
 
@@ -74,7 +74,7 @@ namespace Server.MirObjects.Monsters
         {
             return Visible && base.IsAttackTarget(attacker);
         }
-        public override bool IsAttackTarget(PlayerObject attacker)
+        public override bool IsAttackTarget(HumanObject attacker)
         {
             return Visible && base.IsAttackTarget(attacker);
         }

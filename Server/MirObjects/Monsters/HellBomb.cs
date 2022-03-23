@@ -68,25 +68,22 @@ namespace Server.MirObjects.Monsters
 
             for (int i = 0; i < targets.Count; i++)
             {
-                int damage = GetAttackPower(MinDC, MaxDC);
+                int damage = GetAttackPower(Stats[Stat.MinDC], Stats[Stat.MaxDC]);
                 if (damage == 0) return;
 
                 if (targets[i].Attacked(this, damage, DefenceType.AC) <= 0) continue;
 
-                if (Envir.Random.Next(Settings.PoisonResistWeight) >= targets[i].PoisonResist)
+                switch (Info.Image)
                 {
-                    switch (Info.Image)
-                    {
-                        case Monster.HellBomb1:
-                            targets[i].ApplyPoison(new Poison { Owner = this, Duration = 5, PType = PoisonType.Frozen, Value = GetAttackPower(MinMC, MaxMC), TickSpeed = 2000 }, this);
-                            break;
-                        case Monster.HellBomb2:
-                            targets[i].ApplyPoison(new Poison { Owner = this, Duration = 5, PType = PoisonType.Stun, Value = GetAttackPower(MinMC, MaxMC), TickSpeed = 2000 }, this);
-                            break;
-                        case Monster.HellBomb3:
-                            targets[i].ApplyPoison(new Poison { Owner = this, Duration = 5, PType = PoisonType.Bleeding, Value = GetAttackPower(MinMC, MaxMC), TickSpeed = 2000 }, this);
-                            break;
-                    }
+                    case Monster.HellBomb1:
+                        PoisonTarget(targets[i], 1, 5, PoisonType.Frozen, 2000);
+                        break;
+                    case Monster.HellBomb2:
+                        PoisonTarget(targets[i], 1, 5, PoisonType.Dazed, 2000);
+                        break;
+                    case Monster.HellBomb3:
+                        PoisonTarget(targets[i], 1, 5, PoisonType.Bleeding, 2000);
+                        break;
                 }
             }
         }

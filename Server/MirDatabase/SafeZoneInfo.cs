@@ -4,7 +4,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms;
 
 namespace Server.MirDatabase
 {
@@ -16,10 +15,7 @@ namespace Server.MirDatabase
 
         public MapInfo Info;
 
-        public SafeZoneInfo()
-        {
-
-        }
+        public SafeZoneInfo() { }
 
         public SafeZoneInfo(BinaryReader reader)
         {

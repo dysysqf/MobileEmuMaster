@@ -10,6 +10,11 @@ namespace Server.MirDatabase
 {
     public class MagicInfo
     {
+        protected static Envir Envir
+        {
+            get { return Envir.Main; }
+        }
+
         public string Name;
         public Spell Spell;
         public byte BaseCost, LevelCost, Icon;
@@ -87,6 +92,11 @@ namespace Server.MirDatabase
 
     public class UserMagic
     {
+        protected static Envir Envir
+        {
+            get { return Envir.Main; }
+        }
+
         public Spell Spell;
         public MagicInfo Info;
 
@@ -97,9 +107,9 @@ namespace Server.MirDatabase
 
         private MagicInfo GetMagicInfo(Spell spell)
         {
-            for (int i = 0; i < SMain.Envir.MagicInfoList.Count; i++)
+            for (int i = 0; i < Envir.MagicInfoList.Count; i++)
             {
-                MagicInfo info = SMain.Envir.MagicInfoList[i];
+                MagicInfo info = Envir.MagicInfoList[i];
                 if (info.Spell != spell) continue;
                 return info;
             }
@@ -112,7 +122,7 @@ namespace Server.MirDatabase
             
             Info = GetMagicInfo(Spell);
         }
-        public UserMagic(BinaryReader reader)
+        public UserMagic(BinaryReader reader, int version, int customVersion)
         {
             Spell = (Spell) reader.ReadByte();
             Info = GetMagicInfo(Spell);
@@ -121,10 +131,10 @@ namespace Server.MirDatabase
             Key = reader.ReadByte();
             Experience = reader.ReadUInt16();
 
-            if (Envir.LoadVersion < 15) return;
+            if (version < 15) return;
             IsTempSpell = reader.ReadBoolean();
 
-            if (Envir.LoadVersion < 65) return;
+            if (version < 65) return;
             CastTime = reader.ReadInt64();
         }
         public void Save(BinaryWriter writer)
@@ -138,11 +148,12 @@ namespace Server.MirDatabase
             writer.Write(CastTime);
         }
 
-        public Packet GetInfo()
+        public Packet GetInfo(bool hero)
         {
             return new S.NewMagic
                 {
-                    Magic = CreateClientMagic()
+                    Magic = CreateClientMagic(),
+                    Hero = hero
                 };
         }
 
@@ -167,7 +178,7 @@ namespace Server.MirDatabase
                     IsTempSpell = IsTempSpell,
                     Delay = GetDelay(),
                     Range = Info.Range,
-                    CastTime = (CastTime != 0) && (SMain.Envir.Time > CastTime)? SMain.Envir.Time - CastTime: 0
+                    CastTime = CastTime - Envir.Time
             };
         }
 
@@ -190,7 +201,7 @@ namespace Server.MirDatabase
         {
             if (Info.MPowerBonus > 0)
             {
-                return SMain.Envir.Random.Next(Info.MPowerBase, Info.MPowerBonus + Info.MPowerBase);
+                return Envir.Random.Next(Info.MPowerBase, Info.MPowerBonus + Info.MPowerBase);
             }
             else
                 return Info.MPowerBase;
@@ -199,7 +210,7 @@ namespace Server.MirDatabase
         {
             if (Info.PowerBonus > 0)
             {
-                return SMain.Envir.Random.Next(Info.PowerBase, Info.PowerBonus + Info.PowerBase);
+                return Envir.Random.Next(Info.PowerBase, Info.PowerBonus + Info.PowerBase);
             }
             else
                 return Info.PowerBase;

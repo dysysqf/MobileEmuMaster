@@ -15,7 +15,10 @@ namespace Server.MirObjects.Monsters
             get { return Route.Count > 0 && !Dead && Envir.Time > MoveTime && Envir.Time > ActionTime && Envir.Time > ShockTime; }
         }
 
-        protected internal ConquestArcher(MonsterInfo info) : base(info) { }
+        protected internal ConquestArcher(MonsterInfo info) 
+            : base(info) 
+        { 
+        }
 
         public override bool IsAttackTarget(MonsterObject attacker) { return false; }
 
@@ -61,9 +64,9 @@ namespace Server.MirObjects.Monsters
             }
         }
 
-        public override int Attacked(PlayerObject attacker, int damage, DefenceType type = DefenceType.ACAgility, bool damageWeapon = true)
+        public override int Attacked(HumanObject attacker, int damage, DefenceType type = DefenceType.ACAgility, bool damageWeapon = true)
         {
-            if (!Conquest.WarIsOn || attacker.MyGuild != null && Conquest.Owner == attacker.MyGuild.Guildindex) damage = 0;
+            if (!Conquest.WarIsOn || attacker.MyGuild != null && Conquest.GuildInfo.Owner == attacker.MyGuild.Guildindex) damage = 0;
 
             return base.Attacked(attacker, damage, type, damageWeapon);
         }

@@ -9,7 +9,7 @@ using S = ServerPackets;
 
 namespace Server.MirObjects.Monsters
 {
-    class DarkDevil : MonsterObject
+    public class DarkDevil : MonsterObject
     {
         private long _areaTime;
 
@@ -52,14 +52,16 @@ namespace Server.MirObjects.Monsters
 
         protected override void CompleteRangeAttack(IList<object> data)
         {
-            int damage = GetAttackPower(MinDC, MaxDC) * 3;
+            int damage = GetAttackPower(Stats[Stat.MinDC], Stats[Stat.MaxDC]) * 3;
             if (damage == 0) return;
 
             List<MapObject> targets = FindAllTargets(1, Functions.PointMove(CurrentLocation, Direction, 2));
             if (targets.Count == 0) return;
 
             for (int i = 0; i < targets.Count; i++)
+            {
                 targets[i].Attacked(this, damage, DefenceType.MACAgility);
+            }
         }
     }
 }

@@ -60,16 +60,12 @@ namespace Server.MirObjects.Monsters
 
             for (int i = 0; i < targets.Count; i++)
             {
-                int damage = GetAttackPower(MinDC, MaxDC);
+                int damage = GetAttackPower(Stats[Stat.MinDC], Stats[Stat.MaxDC]);
                 if (damage == 0) return;
 
                 if (targets[i].Attacked(this, damage, DefenceType.ACAgility) <= 0) return;
 
-                if (Envir.Random.Next(Settings.PoisonResistWeight) >= targets[i].PoisonResist)
-                {
-                    if (Envir.Random.Next(5) == 0)
-                        targets[i].ApplyPoison(new Poison { Owner = this, Duration = 5, PType = PoisonType.Green, Value = GetAttackPower(MinSC, MaxSC), TickSpeed = 2000 }, this);
-                }
+                PoisonTarget(targets[i], 5, 5, PoisonType.Green, 2000);
             }
         }
 

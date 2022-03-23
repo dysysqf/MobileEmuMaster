@@ -1,20 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Windows.Forms;
 using Server.MirNetwork;
 using Server.MirEnvir;
+using Server.Utils;
 using C = ClientPackets;
-
 
 namespace Server.MirDatabase
 {
     public class AccountInfo
-    {
+    {       
+        protected static Envir Envir
+        {
+            get { return Envir.Main; }
+        }
+        protected static MessageQueue MessageQueue => MessageQueue.Instance;
+
         public int Index;
 
         public string AccountID = string.Empty;
-        public string Password = string.Empty;
+
+        private string password = string.Empty;
+        public string Password
+        {
+            get { return password; }
+            set
+            {                
+                Salt = Crypto.GenerateSalt();
+                password = Crypto.HashPassword(value, Salt);
+                
+            }
+        }
+
+        public byte[] Salt = new byte[24];
 
         public string UserName = string.Empty;
         public DateTime BirthDate;
@@ -26,6 +44,7 @@ namespace Server.MirDatabase
         public DateTime CreationDate;
 
         public bool Banned;
+        public bool RequirePasswordChange;
         public string BanReason = string.Empty;
         public DateTime ExpiryDate;
         public int WrongPasswordCount;
@@ -41,7 +60,6 @@ namespace Server.MirDatabase
         public uint Gold;
         public uint Credit;
 
-        public ListViewItem ListItem;
         public MirConnection Connection;
         
         public LinkedList<AuctionInfo> Auctions = new LinkedList<AuctionInfo>();
@@ -51,9 +69,11 @@ namespace Server.MirDatabase
         {
 
         }
+
         public AccountInfo(C.NewAccount p)
         {
             AccountID = p.AccountID;
+
             Password = p.Password;
             UserName = p.UserName;
             SecretQuestion = p.SecretQuestion;
@@ -61,14 +81,23 @@ namespace Server.MirDatabase
             EMailAddress = p.EMailAddress;
 
             BirthDate = p.BirthDate;
-            CreationDate = SMain.Envir.Now;
+            CreationDate = Envir.Now;
         }
         public AccountInfo(BinaryReader reader)
         {
             Index = reader.ReadInt32();
 
             AccountID = reader.ReadString();
-            Password = reader.ReadString();
+            if (Envir.LoadVersion < 94)
+                Password = reader.ReadString();
+            else
+                password = reader.ReadString();
+
+            if (Envir.LoadVersion > 93)
+                Salt = reader.ReadBytes(reader.ReadInt32());
+
+            if (Envir.LoadVersion > 97)
+                RequirePasswordChange = reader.ReadBoolean();
 
             UserName = reader.ReadString();
             BirthDate = DateTime.FromBinary(reader.ReadInt64());
@@ -90,7 +119,23 @@ namespace Server.MirDatabase
 
             for (int i = 0; i < count; i++)
             {
-                Characters.Add(new CharacterInfo(reader) { AccountInfo = this });
+                var info = new CharacterInfo(reader, Envir.LoadVersion, Envir.LoadCustomVersion) { AccountInfo = this };
+
+                if (info.Deleted && info.DeleteDate.AddMonths(Settings.ArchiveDeletedCharacterAfterMonths) <= Envir.Now)
+                {
+                    MessageQueue.Enqueue($"Player {info.Name} has been archived due to {Settings.ArchiveDeletedCharacterAfterMonths} month deletion.");
+                    Envir.SaveArchivedCharacter(info);
+                    continue;
+                }
+
+                if (info.LastLoginDate.AddMonths(Settings.ArchiveInactiveCharacterAfterMonths) <= Envir.Now)
+                {
+                    MessageQueue.Enqueue($"Player {info.Name} has been archived due to {Settings.ArchiveInactiveCharacterAfterMonths} months inactivity.");
+                    Envir.SaveArchivedCharacter(info);
+                    continue;
+                }
+
+                Characters.Add(info);
             }
 
             if (Envir.LoadVersion > 75)
@@ -110,7 +155,7 @@ namespace Server.MirDatabase
             {
                 if (!reader.ReadBoolean()) continue;
                 UserItem item = new UserItem(reader, Envir.LoadVersion, Envir.LoadCustomVersion);
-                if (SMain.Envir.BindItem(item) && i < Storage.Length)
+                if (Envir.BindItem(item) && i < Storage.Length)
                     Storage[i] = item;
             }
 
@@ -121,21 +166,23 @@ namespace Server.MirDatabase
                 {
                     if (Characters[i] == null) continue;
                     if (Characters[i].Deleted) continue;
-                    if ((DateTime.Now - Characters[i].LastDate).TotalDays > 13) continue;
-                    if ((Characters[i].Level >= SMain.Envir.RankBottomLevel[0]) || (Characters[i].Level >= SMain.Envir.RankBottomLevel[(byte)Characters[i].Class + 1]))
+                    if ((Envir.Now - Characters[i].LastLogoutDate).TotalDays > 13) continue;
+                    if ((Characters[i].Level >= Envir.RankBottomLevel[0]) || (Characters[i].Level >= Envir.RankBottomLevel[(byte)Characters[i].Class + 1]))
                     {
-                        SMain.Envir.CheckRankUpdate(Characters[i]);
+                        Envir.CheckRankUpdate(Characters[i]);
                     }
                 }
             }
         }
-
 
         public void Save(BinaryWriter writer)
         {
             writer.Write(Index);
             writer.Write(AccountID);
             writer.Write(Password);
+            writer.Write(Salt.Length);
+            writer.Write(Salt);
+            writer.Write(RequirePasswordChange);
 
             writer.Write(UserName);
             writer.Write(BirthDate.ToBinary());
@@ -155,7 +202,9 @@ namespace Server.MirDatabase
 
             writer.Write(Characters.Count);
             for (int i = 0; i < Characters.Count; i++)
+            {
                 Characters[i].Save(writer);
+            }
 
             writer.Write(HasExpandedStorage);
             writer.Write(ExpandedStorageExpiryDate.ToBinary());
@@ -170,39 +219,6 @@ namespace Server.MirDatabase
                 Storage[i].Save(writer);
             }
             writer.Write(AdminAccount);
-        }
-
-        public ListViewItem CreateListView()
-        {
-            if (ListItem != null)
-                ListItem.Remove();
-
-
-            ListItem = new ListViewItem(Index.ToString()) {Tag = this};
-
-            ListItem.SubItems.Add(AccountID);
-            ListItem.SubItems.Add(Password);
-            ListItem.SubItems.Add(UserName);
-            ListItem.SubItems.Add(AdminAccount.ToString());
-            ListItem.SubItems.Add(Banned.ToString());
-            ListItem.SubItems.Add(BanReason);
-            ListItem.SubItems.Add(ExpiryDate.ToString());
-
-            return ListItem;
-        }
-
-        public void Update()
-        {
-            if (ListItem == null) return;
-
-            ListItem.SubItems[0].Text = Index.ToString();
-            ListItem.SubItems[1].Text = AccountID;
-            ListItem.SubItems[2].Text = Password;
-            ListItem.SubItems[3].Text = UserName;
-            ListItem.SubItems[4].Text = AdminAccount.ToString();
-            ListItem.SubItems[5].Text = Banned.ToString();
-            ListItem.SubItems[6].Text = BanReason;
-            ListItem.SubItems[7].Text = ExpiryDate.ToString();
         }
 
         public List<SelectInfo> GetSelectInfo()

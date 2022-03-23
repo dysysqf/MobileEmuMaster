@@ -12,7 +12,7 @@ namespace Server.MirObjects.Monsters
     {
         public long ExplosionTime;
 
-        protected internal BombSpider(MonsterInfo info)
+        protected internal BombSpider(MonsterInfo info) 
             : base(info)
         {
             ExplosionTime = Envir.Time + 1000 * 60 * 5;
@@ -46,20 +46,19 @@ namespace Server.MirObjects.Monsters
 
             for (int i = 0; i < targets.Count; i++)
             {
-                int damage = GetAttackPower(MinDC, MaxDC);
+                int damage = GetAttackPower(Stats[Stat.MinDC], Stats[Stat.MaxDC]);
                 if (damage == 0) return;
 
                 if (targets[i].Attacked(this, damage, DefenceType.ACAgility) <= 0) continue;
 
-                if (Envir.Random.Next(Settings.PoisonResistWeight) >= targets[i].PoisonResist)
+                if (Envir.Random.Next(Settings.PoisonResistWeight) >= targets[i].Stats[Stat.PoisonResist])
                 {
                     if (Envir.Random.Next(5) == 0)
                     {
-                        targets[i].ApplyPoison(new Poison { Owner = this, Duration = 5, PType = PoisonType.Green, Value = GetAttackPower(MinSC, MaxSC), TickSpeed = 2000 }, this);
+                        targets[i].ApplyPoison(new Poison { Owner = this, Duration = 5, PType = PoisonType.Green, Value = GetAttackPower(Stats[Stat.MinSC], Stats[Stat.MaxSC]), TickSpeed = 2000 }, this);
                     }
                 }
             }
         }
-
     }
 }

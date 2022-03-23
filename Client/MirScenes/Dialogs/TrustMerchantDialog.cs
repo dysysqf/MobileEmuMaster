@@ -26,7 +26,7 @@ namespace Client.MirScenes.Dialogs
         public static long SearchTime, MarketTime;
 
         public MirTextBox SearchTextBox, PriceTextBox;
-        public MirButton FindButton, RefreshButton, MailButton, BuyButton, CloseButton, NextButton, BackButton;
+        public MirButton FindButton, RefreshButton, MailButton, BuyButton, SellNowButton, CloseButton, NextButton, BackButton;
         public MirImageControl TitleLabel;
         public MirLabel ItemLabel, PriceLabel, SellerLabel, PageLabel;
         public MirLabel DateLabel, ExpireLabel;
@@ -50,11 +50,11 @@ namespace Client.MirScenes.Dialogs
 
         public MirImageControl FilterBox, FilterBackground;
 
-        private string consignmentText = $"1. Consignment is {Globals.ConsignmentCost} gold per item \r\n\r\n2. 1% of sale price is paid to Trust Merchant " +
+        private readonly string consignmentText = $"1. Consignment is {Globals.ConsignmentCost} gold per item \r\n\r\n2. 1% of sale price is paid to Trust Merchant " +
             $"at sale end\r\n\r\n3. Maximum {Globals.ConsignmentLength} days of item sale registration until item is removed\r\n\r\n4. Maximum of unlimited " +
             $"items allowed for sale\r\n\r\n5. Sale price can be set between: {Globals.MinConsignment} - {Globals.MaxConsignment} gold";
 
-        private string auctionText = $"1. Auction cost is {Globals.AuctionCost} gold, max starting bid is {Globals.MaxStartingBid} gold per item \r\n\r\n2. 1% of final bid price is paid to Trust Merchant " +
+        private readonly string auctionText = $"1. Auction cost is {Globals.AuctionCost} gold, max starting bid is {Globals.MaxStartingBid} gold per item \r\n\r\n2. 1% of final bid price is paid to Trust Merchant " +
             $"at auction end\r\n\r\n3. Maximum {Globals.ConsignmentLength} days of item sale registration, afterwards the item will be sent to highest bidder\r\n\r\n4. Maximum of unlimited " +
             $"items allowed for auction\r\n\r\n";
 
@@ -428,6 +428,25 @@ namespace Client.MirScenes.Dialogs
                     }
                 }
             };
+
+            SellNowButton = new MirButton
+            {
+                Index = 700,
+                HoverIndex = 701,
+                PressedIndex = 702,
+                Library = Libraries.Title,
+                Location = new Point(324, 448),
+                Sound = SoundList.ButtonA,
+                Parent = this,
+            };
+            SellNowButton.Click += (o, e) =>
+            {
+                if (Selected == null || CMain.Time < MarketTime) return;
+
+                MarketTime = CMain.Time + 3000;
+                Network.Enqueue(new C.MarketSellNow { AuctionID = Selected.Listing.AuctionID });
+            };
+
             #endregion
 
             #region Search
@@ -437,7 +456,7 @@ namespace Client.MirScenes.Dialogs
                 //Location = new Point(174, 452),
                 //Location = new Point(240, 451),
                 Location = new Point(11, 452),
-                Size = new Size(110, 1),
+                Size = new Size(110, 18),
                 MaxLength = 20,
                 Parent = this,
                 CanLoseFocus = true,
@@ -505,7 +524,7 @@ namespace Client.MirScenes.Dialogs
             PriceTextBox = new MirTextBox
             {
                 Location = new Point(15, 165),
-                Size = new Size(100, 1),
+                Size = new Size(100, 18),
                 MaxLength = 20,
                 Parent = this,
                 CanLoseFocus = true,
@@ -528,7 +547,7 @@ namespace Client.MirScenes.Dialogs
             };
             SellItemButton.Click += (o, e) =>
             {
-                Network.Enqueue(new C.ConsignItem { UniqueID = SellItemSlot.UniqueID, Price = Amount });
+                Network.Enqueue(new C.ConsignItem { UniqueID = SellItemSlot.UniqueID, Price = Amount, Type = MarketType });
                 SellItemSlot = null;
                 PriceTextBox.Text = null;
                 SellItemButton.Enabled = false;
@@ -898,6 +917,17 @@ namespace Client.MirScenes.Dialogs
                 MailButton.Enabled = false;
                 MailButton.GrayScale = true;
             }
+
+            if (Selected != null && Selected.Listing.Seller == "Bid Met")
+            {
+                SellNowButton.Enabled = true;
+                SellNowButton.GrayScale = false;
+            }
+            else
+            {
+                SellNowButton.Enabled = false;
+                SellNowButton.GrayScale = true;
+            }
         }
 
         private void SearchTextBox_KeyPress(object sender, KeyPressEventArgs e)
@@ -996,6 +1026,7 @@ namespace Client.MirScenes.Dialogs
                     BuyButton.Index = 703;
                     BuyButton.HoverIndex = 704;
                     BuyButton.PressedIndex = 705;
+                    SellNowButton.Visible = false;
                     UpButton.Visible = true;
                     DownButton.Visible = true;
                     PositionBar.Visible = true;
@@ -1038,6 +1069,7 @@ namespace Client.MirScenes.Dialogs
                     BuyButton.Index = 706;
                     BuyButton.HoverIndex = 707;
                     BuyButton.PressedIndex = 708;
+                    SellNowButton.Visible = false;
                     UpButton.Visible = false;
                     DownButton.Visible = false;
                     PositionBar.Visible = false;
@@ -1086,6 +1118,7 @@ namespace Client.MirScenes.Dialogs
                     BuyButton.Index = 706;
                     BuyButton.HoverIndex = 707;
                     BuyButton.PressedIndex = 708;
+                    SellNowButton.Visible = true;
                     UpButton.Visible = false;
                     DownButton.Visible = false;
                     PositionBar.Visible = false;
@@ -1133,6 +1166,7 @@ namespace Client.MirScenes.Dialogs
                     BuyButton.Index = 703;
                     BuyButton.HoverIndex = 704;
                     BuyButton.PressedIndex = 705;
+                    SellNowButton.Visible = false;
                     UpButton.Visible = true;
                     DownButton.Visible = true;
                     PositionBar.Visible = true;
@@ -1253,7 +1287,7 @@ namespace Client.MirScenes.Dialogs
             PriceTextBox.SetFocus();
         }
 
-        public  void Hide()
+        public override void Hide()
         {
             if (!Visible) return;
             Visible = false;
@@ -1420,7 +1454,7 @@ namespace Client.MirScenes.Dialogs
             {
                 Listing = listing;
                 NameLabel.Text = Listing.Item.FriendlyName;
-                PriceLabel.Text = Listing.Price.ToString("###,###,##0");
+                PriceLabel.Text = String.Format("{0:###,###,##0} {1}", Listing.Price, listing.ItemType == MarketItemType.Auction ? "Bid" : "");
 
                 NameLabel.ForeColour = GameScene.Scene.GradeNameColor(Listing.Item.Info.Grade);
                 if (NameLabel.ForeColour == Color.Yellow)
@@ -1439,6 +1473,7 @@ namespace Client.MirScenes.Dialogs
 
 
                 SellerLabel.Text = Listing.Seller;
+                SellerLabel.ForeColour = Color.White;
 
                 if (UserMode)
                 {

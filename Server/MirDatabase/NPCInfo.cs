@@ -10,6 +10,11 @@ namespace Server.MirDatabase
 {
     public class NPCInfo
     {
+        protected static Envir EditEnvir
+        {
+            get { return Envir.Edit; }
+        }
+
         public int Index;
 
         public string FileName = string.Empty, Name = string.Empty;
@@ -32,29 +37,26 @@ namespace Server.MirDatabase
         public bool Sabuk = false;
         public int FlagNeeded = 0;
         public int Conquest;
-
-        public bool IsDefault, IsRobot;
+        public bool ShowOnBigMap;
+        public int BigMapIcon;
+        public bool CanTeleportTo;
 
         public List<int> CollectQuestIndexes = new List<int>();
         public List<int> FinishQuestIndexes = new List<int>();
         
-        public NPCInfo()
-        { }
+        public NPCInfo() { }
         public NPCInfo(BinaryReader reader)
         {
-            if (Envir.LoadVersion > 33)
-            {
-                Index = reader.ReadInt32();
-                MapIndex = reader.ReadInt32();
+            Index = reader.ReadInt32();
+            MapIndex = reader.ReadInt32();
 
-                int count = reader.ReadInt32();
-                for (int i = 0; i < count; i++)
-                    CollectQuestIndexes.Add(reader.ReadInt32());
+            int count = reader.ReadInt32();
+            for (int i = 0; i < count; i++)
+                CollectQuestIndexes.Add(reader.ReadInt32());
 
-                count = reader.ReadInt32();
-                for (int i = 0; i < count; i++)
-                    FinishQuestIndexes.Add(reader.ReadInt32());
-            }
+            count = reader.ReadInt32();
+            for (int i = 0; i < count; i++)
+                FinishQuestIndexes.Add(reader.ReadInt32());
 
             FileName = reader.ReadString();
             Name = reader.ReadString();
@@ -89,6 +91,14 @@ namespace Server.MirDatabase
                     Sabuk = reader.ReadBoolean();
                 FlagNeeded = reader.ReadInt32();
             }
+
+            if (Envir.LoadVersion > 95)
+            {
+                ShowOnBigMap = reader.ReadBoolean();
+                BigMapIcon = reader.ReadInt32();
+            }
+            if (Envir.LoadVersion > 96)
+                CanTeleportTo = reader.ReadBoolean();
         }
         public void Save(BinaryWriter writer)
         {
@@ -122,6 +132,10 @@ namespace Server.MirDatabase
             writer.Write(ClassRequired);
             writer.Write(Conquest);
             writer.Write(FlagNeeded);
+
+            writer.Write(ShowOnBigMap);
+            writer.Write(BigMapIcon);
+            writer.Write(CanTeleportTo);
         }
 
         public static void FromText(string text)
@@ -135,7 +149,7 @@ namespace Server.MirDatabase
             int x, y;
 
             info.FileName = data[0];
-            info.MapIndex = SMain.EditEnvir.MapInfoList.Where(d => d.FileName == data[1]).FirstOrDefault().Index;
+            info.MapIndex = EditEnvir.MapInfoList.Where(d => d.FileName == data[1]).FirstOrDefault().Index;
 
             if (!int.TryParse(data[2], out x)) return;
             if (!int.TryParse(data[3], out y)) return;
@@ -147,18 +161,32 @@ namespace Server.MirDatabase
             if (!ushort.TryParse(data[5], out info.Image)) return;
             if (!ushort.TryParse(data[6], out info.Rate)) return;
 
-            info.Index = ++SMain.EditEnvir.NPCIndex;
-            SMain.EditEnvir.NPCInfoList.Add(info);
+            info.Index = ++EditEnvir.NPCIndex;
+            EditEnvir.NPCInfoList.Add(info);
         }
         public string ToText()
         {
             return string.Format("{0},{1},{2},{3},{4},{5},{6}",
-                FileName, SMain.EditEnvir.MapInfoList.Where(d => d.Index == MapIndex).FirstOrDefault().FileName, Location.X, Location.Y, Name, Image, Rate);
+                FileName, EditEnvir.MapInfoList.Where(d => d.Index == MapIndex).FirstOrDefault().FileName, Location.X, Location.Y, Name, Image, Rate);
         }
 
         public override string ToString()
         {
             return string.Format("{0}:   {1}", FileName, Functions.PointToString(Location));
+        }
+
+        public string GameName
+        {
+            get
+            {
+                string s = Name;
+                if (s.Contains("_"))
+                {
+                    string[] splitName = s.Split('_');
+                    s = splitName[splitName.Length - 1];
+                }
+                return s;
+            }
         }
     }
 }

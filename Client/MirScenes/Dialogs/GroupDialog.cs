@@ -52,8 +52,6 @@ namespace Client.MirScenes.Dialogs
                 };
             }
 
-
-
             TitleLabel = new MirImageControl
             {
                 Index = 5,
@@ -216,18 +214,6 @@ namespace Client.MirScenes.Dialogs
                 inputBox.Dispose();
             };
             inputBox.Show();
-        }
-
-
-        public void Hide()
-        {
-            if (!Visible) return;
-            Visible = false;
-        }
-        public void Show()
-        {
-            if (Visible) return;
-            Visible = true;
         }
     }
 }

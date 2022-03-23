@@ -15,7 +15,7 @@ namespace Server.MirObjects.Monsters
         public bool Closed;
         private long CloseTime;
 
-        private bool AutoOpen = true;
+        private bool AutoOpen = false;
 
         protected List<BlockingObject> BlockingObjects = new List<BlockingObject>();
 
@@ -53,12 +53,13 @@ namespace Server.MirObjects.Monsters
 
             MonsterInfo bInfo = new MonsterInfo
             {
-                HP = this.HP,
                 Image = Monster.EvilMirBody,
                 CanTame = false,
                 CanPush = false,
                 AutoRev = false
-            };        
+            };
+
+            bInfo.Stats[Stat.HP] = this.Stats[Stat.HP];
 
             foreach (var block in BlockArray)
             {
@@ -67,7 +68,7 @@ namespace Server.MirObjects.Monsters
 
                 if (!b.Spawn(this.CurrentMap, new Point(this.CurrentLocation.X + block.X, this.CurrentLocation.Y + block.Y)))
                 {
-                    SMain.EnqueueDebugging(string.Format("{3} blocking mob not spawned at {0} {1}:{2}", CurrentMap.Info.FileName, block.X, block.Y, Info.Name));
+                    MessageQueue.EnqueueDebugging(string.Format("{3} blocking mob not spawned at {0} {1}:{2}", CurrentMap.Info.FileName, block.X, block.Y, Info.Name));
                 }
             }
         }
@@ -88,7 +89,7 @@ namespace Server.MirObjects.Monsters
 
             SearchTime = Envir.Time + SearchDelay;
 
-            if(Closed && AutoOpen)
+            if (Closed && AutoOpen)
             {
                 var nearby = FindAllNearby(4, CurrentLocation);
 
@@ -122,7 +123,7 @@ namespace Server.MirObjects.Monsters
 
             return Closed && base.IsAttackTarget(attacker);
         }
-        public override bool IsAttackTarget(PlayerObject attacker)
+        public override bool IsAttackTarget(HumanObject attacker)
         {
             if (attacker.MyGuild != null && attacker.MyGuild.Conquest != null && attacker.MyGuild.Conquest == Conquest) return false;
 
@@ -142,7 +143,7 @@ namespace Server.MirObjects.Monsters
             base.Die();
         }
 
-        public override int Attacked(PlayerObject attacker, int damage, DefenceType type = DefenceType.ACAgility, bool damageWeapon = true)
+        public override int Attacked(HumanObject attacker, int damage, DefenceType type = DefenceType.ACAgility, bool damageWeapon = true)
         {
             return base.Attacked(attacker, damage, type, damageWeapon);
         }

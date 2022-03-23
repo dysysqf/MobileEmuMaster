@@ -3,11 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Server.MirEnvir;
 
 namespace Server.MirDatabase
 {
     public class AuctionInfo
     {
+        protected static Envir Envir
+        {
+            get { return Envir.Main; }
+        }
+
         public ulong AuctionID; 
 
         public UserItem Item;
@@ -19,7 +25,6 @@ namespace Server.MirDatabase
 
         public bool Expired, Sold;
 
-
         public MarketItemType ItemType;
 
         public AuctionInfo()
@@ -27,12 +32,13 @@ namespace Server.MirDatabase
             
         }
 
+
         public AuctionInfo(CharacterInfo info, UserItem item, uint price, MarketItemType itemType)
         {
-            AuctionID = ++SMain.Envir.NextAuctionID;
+            AuctionID = ++Envir.NextAuctionID;
             SellerIndex = info.Index;
             SellerInfo = info;
-            ConsignmentDate = SMain.Envir.Now;
+            ConsignmentDate = Envir.Now;
             Item = item;
             Price = price;
             ItemType = itemType;
@@ -42,6 +48,7 @@ namespace Server.MirDatabase
                 CurrentBid = Price;
             }
         }
+
         public AuctionInfo(BinaryReader reader, int version, int customversion)
         {
             AuctionID = reader.ReadUInt64();
@@ -50,8 +57,8 @@ namespace Server.MirDatabase
             ConsignmentDate = DateTime.FromBinary(reader.ReadInt64());
             Price = reader.ReadUInt32();
             SellerIndex = reader.ReadInt32();
-
-
+            Expired = reader.ReadBoolean();
+            Sold = reader.ReadBoolean();
 
             if (version > 79)
             {
@@ -64,9 +71,6 @@ namespace Server.MirDatabase
 
                 CurrentBuyerIndex = reader.ReadInt32();
             }
-
-            Expired = reader.ReadBoolean();
-            Sold = reader.ReadBoolean();
         }
 
         public void Save(BinaryWriter writer)
@@ -79,13 +83,12 @@ namespace Server.MirDatabase
 
             writer.Write(SellerIndex);
 
-            writer.Write((byte)ItemType);
-            writer.Write(CurrentBid);
-            writer.Write(CurrentBuyerIndex);
-
             writer.Write(Expired);
             writer.Write(Sold);
 
+            writer.Write((byte)ItemType);
+            writer.Write(CurrentBid);
+            writer.Write(CurrentBuyerIndex);
         }
 
         private string GetSellerLabel(bool userMatch)

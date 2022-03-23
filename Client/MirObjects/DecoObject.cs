@@ -9,7 +9,7 @@ using S = ServerPackets;
 
 namespace Client.MirObjects
 {
-    class DecoObject : MapObject
+    public class DecoObject : MapObject
     {
         public override ObjectType Race
         {
@@ -21,7 +21,7 @@ namespace Client.MirObjects
             get { return false; }
         }
 
-        public ushort Image;
+        public int Image;
 
         public DecoObject(uint objectID)
             : base(objectID)

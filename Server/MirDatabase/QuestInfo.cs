@@ -12,6 +12,21 @@ namespace Server.MirDatabase
 {
     public class QuestInfo
     {
+        protected static Envir Envir
+        {
+            get { return Envir.Main; }
+        }
+
+        protected static Envir EditEnvir
+        {
+            get { return Envir.Edit; }
+        }
+
+        protected static MessageQueue MessageQueue
+        {
+            get { return MessageQueue.Instance; }
+        }
+
         public int Index;
 
         public uint NpcIndex;
@@ -23,6 +38,14 @@ namespace Server.MirDatabase
         {
             get { return _finishNpcIndex == 0 ? NpcIndex : _finishNpcIndex; }
             set { _finishNpcIndex = value; }
+        }
+
+        public NPCObject FinishNPC
+        {
+            get
+            {
+                return Envir.NPCs.Single(x => x.ObjectID == FinishNpcIndex);
+            }
         }
 
         public string 
@@ -43,11 +66,15 @@ namespace Server.MirDatabase
 
         public QuestType Type;
 
+        public int TimeLimitInSeconds = 0;
+
         public List<QuestItemTask> CarryItems = new List<QuestItemTask>(); 
 
         public List<QuestKillTask> KillTasks = new List<QuestKillTask>();
         public List<QuestItemTask> ItemTasks = new List<QuestItemTask>();
         public List<QuestFlagTask> FlagTasks = new List<QuestFlagTask>();
+        //TODO: ZoneTasks
+        //TODO: EscortTasks
 
         public uint GoldReward;
         public uint ExpReward;
@@ -68,11 +95,8 @@ namespace Server.MirDatabase
             FileName = reader.ReadString();
             RequiredMinLevel = reader.ReadInt32();
 
-            if (Envir.LoadVersion >= 38)
-            {
-                RequiredMaxLevel = reader.ReadInt32();
-                if (RequiredMaxLevel == 0) RequiredMaxLevel = ushort.MaxValue;
-            }
+            RequiredMaxLevel = reader.ReadInt32();
+            if (RequiredMaxLevel == 0) RequiredMaxLevel = ushort.MaxValue;
 
             RequiredQuest = reader.ReadInt32();
             RequiredClass = (RequiredClass)reader.ReadByte();
@@ -80,7 +104,12 @@ namespace Server.MirDatabase
             GotoMessage = reader.ReadString();
             KillMessage = reader.ReadString();
             ItemMessage = reader.ReadString();
-            if(Envir.LoadVersion >= 37) FlagMessage = reader.ReadString();
+            FlagMessage = reader.ReadString();
+
+            if (Envir.LoadVersion > 90)
+            {
+                TimeLimitInSeconds = reader.ReadInt32();
+            }
 
             LoadInfo();
         }
@@ -100,6 +129,7 @@ namespace Server.MirDatabase
             writer.Write(KillMessage);
             writer.Write(ItemMessage);
             writer.Write(FlagMessage);
+            writer.Write(TimeLimitInSeconds);
         }
 
         public void LoadInfo(bool clear = false)
@@ -117,7 +147,7 @@ namespace Server.MirDatabase
                 ParseFile(lines);
             }
             else
-                SMain.Enqueue(string.Format("File Not Found: {0}, Quest: {1}", fileName, Name));
+                MessageQueue.Enqueue(string.Format("File Not Found: {0}, Quest: {1}", fileName, Name));
         }
 
         public void ClearInfo()
@@ -232,18 +262,18 @@ namespace Server.MirDatabase
             if (line.Length < 1) return;
 
             string[] split = line.Split(' ');
-            uint count = 1;
+            ushort count = 1;
 
-            if (split.Length > 1) uint.TryParse(split[1], out count);
+            if (split.Length > 1) ushort.TryParse(split[1], out count);
 
-            ItemInfo mInfo = SMain.Envir.GetItemInfo(split[0]);
+            ItemInfo mInfo = Envir.GetItemInfo(split[0]);
 
             if (mInfo == null)
             {
-                mInfo = SMain.Envir.GetItemInfo(split[0] + "(M)");
+                mInfo = Envir.GetItemInfo(split[0] + "(M)");
                 if (mInfo != null) list.Add(new QuestItemReward() { Item = mInfo, Count = count });
 
-                mInfo = SMain.Envir.GetItemInfo(split[0] + "(F)");
+                mInfo = Envir.GetItemInfo(split[0] + "(F)");
                 if (mInfo != null) list.Add(new QuestItemReward() { Item = mInfo, Count = count });
             }
             else
@@ -260,7 +290,7 @@ namespace Server.MirDatabase
             int count = 1;
             string message = "";
 
-            MonsterInfo mInfo = SMain.Envir.GetMonsterInfo(split[0]);
+            MonsterInfo mInfo = Envir.GetMonsterInfo(split[0]);
             if (split.Length > 1) int.TryParse(split[1], out count);
 
             var match = _regexMessage.Match(line);
@@ -277,11 +307,11 @@ namespace Server.MirDatabase
             if (line.Length < 1) return null;
 
             string[] split = line.Split(' ');
-            uint count = 1;
+            ushort count = 1;
             string message = "";
 
-            ItemInfo mInfo = SMain.Envir.GetItemInfo(split[0]);
-            if (split.Length > 1) uint.TryParse(split[1], out count);
+            ItemInfo mInfo = Envir.GetItemInfo(split[0]);
+            if (split.Length > 1) ushort.TryParse(split[1], out count);
 
             var match = _regexMessage.Match(line);
             if (match.Success)
@@ -370,6 +400,7 @@ namespace Server.MirDatabase
                 ClassNeeded = RequiredClass,
                 QuestNeeded = RequiredQuest,
                 Type = Type,
+                TimeLimitInSeconds = TimeLimitInSeconds,
                 RewardGold = GoldReward,
                 RewardExp = ExpReward,
                 RewardCredit = CreditReward,
@@ -409,8 +440,8 @@ namespace Server.MirDatabase
 
             info.RequiredClass = (RequiredClass)temp;
 
-            info.Index = ++SMain.EditEnvir.QuestIndex;
-            SMain.EditEnvir.QuestInfoList.Add(info);
+            info.Index = ++EditEnvir.QuestIndex;
+            EditEnvir.QuestInfoList.Add(info);
         }
 
         public string ToText()
@@ -435,7 +466,7 @@ namespace Server.MirDatabase
     public class QuestItemTask
     {
         public ItemInfo Item;
-        public uint Count;
+        public ushort Count;
         public string Message;
     }
 

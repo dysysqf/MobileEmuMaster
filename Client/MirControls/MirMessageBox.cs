@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 using Client.MirGraphics;
+using Client.MirScenes;
 
 namespace Client.MirControls
 {
@@ -145,7 +146,7 @@ namespace Client.MirControls
             }
         }
 
-        public void Show()
+        public override void Show()
         {
             if (Parent != null) return;
 
